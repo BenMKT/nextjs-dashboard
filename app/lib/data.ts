@@ -63,7 +63,7 @@ export async function fetchCardData() {
          SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
          FROM invoices`;
-
+    // Apply parallel data fetching with Promise.all() to initialize all data requests at once avoiding unintentional sequential requests (Waterfall effect) improving performance
     const data = await Promise.all([
       invoiceCountPromise,
       customerCountPromise,
