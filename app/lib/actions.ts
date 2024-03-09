@@ -1,6 +1,8 @@
 // Make it a server component to mark all the exported functions within the file as server functions/actions
 'use server';
 import { sql } from '@vercel/postgres';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 // use a TypeScript-first validation library (Zod) to handle type validation
 import { z } from 'zod';
 // define a schema that matches the shape of your form object
@@ -33,4 +35,8 @@ export async function createInvoice(formData: FormData) {
   await sql`
     INSERT INTO invoices (customer_id, amount, status, date) VALUES (${rawFormData.customerId}, ${amountInCents}, ${rawFormData.status}, ${date})  
   `;
+  // Once the database has been updated, the `/dashboard/invoices` path should be revalidated allowing fresh data to be fetched from the server to reflect the changes
+  revalidatePath('/dashbord/invoices');
+  // At this point, redirect the user back to the `/dashboard/invoices` page
+  redirect('/dashboard/invoices');
 }
