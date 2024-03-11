@@ -1,11 +1,12 @@
 // Make it a server component to mark all the exported functions within the file as server functions/actions
 'use server';
+
 import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 // use a TypeScript-first validation library (Zod) to handle type validation
 import { z } from 'zod';
-// define a schema that matches the shape of your form object
+// define a schema that matches the shape of your database invoice table object using Zod
 const FormSchema = z.object({
   id: z.string(),
   customerId: z.string(),
@@ -13,13 +14,19 @@ const FormSchema = z.object({
   status: z.enum(['pending', 'paid']),
   date: z.string(),
 });
-
+// define a schema that matches the shape of your create form object
 const CreateInvoice = FormSchema.pick({
   customerId: true,
   amount: true,
   status: true,
 });
+// define a schema that matches the shape of your edit form object
+const UpdateInvoice = FormSchema.omit({
+  id: true,
+  date: true,
+});
 
+// define a function/action to create a new invoice
 export async function createInvoice(formData: FormData) {
   // Extract and Convert FormData to a plain object
   const RawFormData = Object.fromEntries(formData.entries());
@@ -38,5 +45,25 @@ export async function createInvoice(formData: FormData) {
   // Once the database has been updated, the `/dashboard/invoices` path should be revalidated allowing fresh data to be fetched from the server to reflect the changes
   revalidatePath('/dashbord/invoices');
   // At this point, redirect the user back to the `/dashboard/invoices` page
+  redirect('/dashboard/invoices');
+}
+
+// Similarly like above, define a function/action to update/edit an invoice
+export async function updateInvoice(id: string, formData: FormData) {
+  // Extract the data from formData
+  const RawFormData = Object.fromEntries(formData.entries());
+  // Validate the types with Zod
+  const rawFormData = UpdateInvoice.parse(RawFormData);
+  // Convert the amount into cents
+  const amountInCents = rawFormData.amount * 100;
+  // create an SQL query to update/edit the invoice in your database and pass in the variables
+  await sql`
+    UPDATE invoices
+    SET customer_id = ${rawFormData.customerId}, amount = ${amountInCents}, status = ${rawFormData.status}
+    WHERE id = ${id}
+  `;
+  // Call `revalidatePath` to clear the client cache and make a new server request
+  revalidatePath('/dashboard/invoices');
+  // Call `redirect` to redirect the user to the invoice's page
   redirect('/dashboard/invoices');
 }
