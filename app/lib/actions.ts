@@ -67,3 +67,14 @@ export async function updateInvoice(id: string, formData: FormData) {
   // Call `redirect` to redirect the user to the invoice's page
   redirect('/dashboard/invoices');
 }
+
+// define a function/action to delete an invoice
+export async function deleteInvoice(id: string) {
+  // create an SQL query to delete the invoice from your database
+  await sql`
+    DELETE FROM invoices
+    WHERE id = ${id}
+  `;
+  // call `revalidatePath` to clear the client cache and make a new server request
+  revalidatePath('/dashboard/invoices');
+}
