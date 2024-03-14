@@ -38,7 +38,7 @@ export async function createInvoice(formData: FormData) {
   const date = new Date().toISOString().split('T')[0];
   // Test it out in the console terminal
   // console.log(date);
-  // create an SQL query to insert the new invoice into your database and pass in the variables
+  // create an SQL query, with error handling, to insert the new invoice into your database and pass in the variables
   try {
     await sql`
       INSERT INTO invoices (customer_id, amount, status, date) VALUES (${rawFormData.customerId}, ${amountInCents}, ${rawFormData.status}, ${date})  
@@ -62,7 +62,7 @@ export async function updateInvoice(id: string, formData: FormData) {
   const rawFormData = UpdateInvoice.parse(RawFormData);
   // Convert the amount into cents
   const amountInCents = rawFormData.amount * 100;
-  // create an SQL query to update/edit the invoice in your database and pass in the variables
+  // create an SQL query, with error handling, to update/edit the invoice in your database and pass in the variables
   try {
     await sql`
       UPDATE invoices
@@ -82,7 +82,8 @@ export async function updateInvoice(id: string, formData: FormData) {
 
 // define a function/action to delete an invoice
 export async function deleteInvoice(id: string) {
-  // create an SQL query to delete the invoice from your database
+  // create an SQL query, with error handling, to delete the invoice from your database
+  throw new Error('Failed to Delete Invoice');
   try {
     await sql`
       DELETE FROM invoices
