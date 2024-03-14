@@ -39,9 +39,15 @@ export async function createInvoice(formData: FormData) {
   // Test it out in the console terminal
   // console.log(date);
   // create an SQL query to insert the new invoice into your database and pass in the variables
-  await sql`
-    INSERT INTO invoices (customer_id, amount, status, date) VALUES (${rawFormData.customerId}, ${amountInCents}, ${rawFormData.status}, ${date})  
-  `;
+  try {
+    await sql`
+      INSERT INTO invoices (customer_id, amount, status, date) VALUES (${rawFormData.customerId}, ${amountInCents}, ${rawFormData.status}, ${date})  
+    `;
+  } catch (error) {
+    return {
+      message: 'Database Error: Failed to Create Invoice.'
+    };
+  }
   // Once the database has been updated, the `/dashboard/invoices` path should be revalidated allowing fresh data to be fetched from the server to reflect the changes
   revalidatePath('/dashbord/invoices');
   // At this point, redirect the user back to the `/dashboard/invoices` page
@@ -57,11 +63,17 @@ export async function updateInvoice(id: string, formData: FormData) {
   // Convert the amount into cents
   const amountInCents = rawFormData.amount * 100;
   // create an SQL query to update/edit the invoice in your database and pass in the variables
-  await sql`
-    UPDATE invoices
-    SET customer_id = ${rawFormData.customerId}, amount = ${amountInCents}, status = ${rawFormData.status}
-    WHERE id = ${id}
-  `;
+  try {
+    await sql`
+      UPDATE invoices
+      SET customer_id = ${rawFormData.customerId}, amount = ${amountInCents}, status = ${rawFormData.status}
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    return {
+      message: 'Database Error: Failed to Update Invoice.'
+    };
+  }
   // Call `revalidatePath` to clear the client cache and make a new server request
   revalidatePath('/dashboard/invoices');
   // Call `redirect` to redirect the user to the invoice's page
@@ -71,10 +83,16 @@ export async function updateInvoice(id: string, formData: FormData) {
 // define a function/action to delete an invoice
 export async function deleteInvoice(id: string) {
   // create an SQL query to delete the invoice from your database
-  await sql`
-    DELETE FROM invoices
-    WHERE id = ${id}
-  `;
+  try {
+    await sql`
+      DELETE FROM invoices
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    return {
+      message: 'Database Error: Failed to Delete Invoice.'
+    };
+  }
   // call `revalidatePath` to clear the client cache and make a new server request
   revalidatePath('/dashboard/invoices');
 }
