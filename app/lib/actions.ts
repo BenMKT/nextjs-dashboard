@@ -81,23 +81,41 @@ export async function createInvoice(prevState: State, formData: FormData) {
 }
 
 // Similarly like above, define a function/action to update/edit an invoice
-export async function updateInvoice(id: string, formData: FormData) {
+export async function updateInvoice(
+  id: string,
+  prevState: State,
+  formData: FormData,
+) {
   // Extract the data from formData
-  const RawFormData = Object.fromEntries(formData.entries());
-  // Validate the types with Zod
-  const rawFormData = UpdateInvoice.parse(RawFormData);
+  // const RawFormData = Object.fromEntries(formData.entries());
+  const RawFormData = {
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  };
+  // Validate the types with Zod using safeParse for Server-Side Validation
+  const validatedFields = UpdateInvoice.safeParse(RawFormData);
+  // If form validation fails, return errors early. Otherwise, continue.
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Field. Failed to Update Invoice.',
+    };
+  }
+  // Prepare data for insertion into the database
+  const { customerId, amount, status } = validatedFields.data;
   // Convert the amount into cents
-  const amountInCents = rawFormData.amount * 100;
+  const amountInCents = amount * 100;
   // create an SQL query, with error handling, to update/edit the invoice in your database and pass in the variables
   try {
     await sql`
       UPDATE invoices
-      SET customer_id = ${rawFormData.customerId}, amount = ${amountInCents}, status = ${rawFormData.status}
+      SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
       WHERE id = ${id}
     `;
   } catch (error) {
     return {
-      message: 'Database Error: Failed to Update Invoice.'
+      message: 'Database Error: Failed to Update Invoice.',
     };
   }
   // Call `revalidatePath` to clear the client cache and make a new server request
