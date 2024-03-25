@@ -4,6 +4,8 @@
 import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { signIn } from '@/auth';
+import { AuthError } from 'next-auth';
 // use a TypeScript-first validation library (Zod) to handle type validation
 import { z } from 'zod';
 // define a schema that matches the shape of your database invoice table object using Zod
@@ -141,3 +143,22 @@ export async function deleteInvoice(id: string) {
   // call `revalidatePath` to clear the client cache and make a new server request
   revalidatePath('/dashboard/invoices');
 }
+
+// define a function/action to connect the auth logic with your login form
+export async function authenticate(
+  prevState: string | undefined,
+  formData: FormData,
+) {
+  try {
+    // Call the signIn function from the auth library
+    await signIn('credentials', formData);
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin': return 'Invalid credentials.'      
+        default: return 'Something went wrong.';
+      }
+    }
+    throw error;
+  }
+};
